@@ -411,6 +411,7 @@
             <button id="startBtn" onclick="startGame()">🚀 INICIAR COLONIA</button>
             <button id="stopBtn" onclick="stopGame()" class="disabled">⏹️ DETENER</button>
             <button onclick="toggleSessionLog()">📊 VER REGISTROS</button>
+            <button onclick="resetGame()" style="background: linear-gradient(45deg, rgba(255, 0, 0, 0.2), rgba(139, 0, 0, 0.3)); border-color: #FF4444;">🔄 REINICIAR TODO</button>
         </div>
 
         <div class="main-layout">
@@ -610,6 +611,60 @@
             }
         ];
 
+        function resetGame() {
+            // Confirmar antes de reiniciar
+            const confirmed = confirm('⚠️ ¿Estás seguro que quieres REINICIAR TODO? \n\nSe perderán:\n• Todo el progreso de la colonia\n• Todos los registros de sesiones\n• Todos los logros desbloqueados\n• Todas las mejoras compradas\n\nEsta acción NO se puede deshacer.');
+            
+            if (!confirmed) return;
+            
+            // Detener juego si está corriendo
+            if (gameState.isRunning) {
+                stopGame();
+            }
+            
+            // Resetear completamente el estado del juego
+            gameState = {
+                isRunning: false,
+                startTime: null,
+                endTime: null,
+                population: 1,
+                energy: 10,
+                minerals: 5,
+                research: 0,
+                buildings: 1,
+                efficiency: 1.0,
+                upgrades: {
+                    energyGenerator: 0,
+                    miningDrill: 0,
+                    researchLab: 0,
+                    habitatModule: 0,
+                    solarArray: 0,
+                    quantumComputer: 0
+                },
+                achievements: [...achievementsList],
+                sessionHistory: [],
+                totalPlayTime: 0,
+                dailyPlayTime: {},
+                consecutiveDays: 0,
+                lastPlayDate: null
+            };
+            
+            // Limpiar datos guardados
+            localStorage.removeItem('colonyGameSave');
+            
+            // Limpiar interfaz
+            const log = document.getElementById('sessionLog');
+            log.innerHTML = '<div class="session-entry">🔄 Sistema reiniciado - Esperando activación</div>';
+            
+            const buildings = document.getElementById('buildings');
+            buildings.innerHTML = '';
+            
+            // Reinicializar todo
+            initializeGame();
+            
+            showNotification('🔄 ¡Sistema completamente reiniciado! Colonia restaurada a valores iniciales.');
+        }
+
         // Inicializar el estado de botones al cargar
         function initializeGame() {
             gameState.achievements = [...achievementsList];
@@ -642,14 +697,13 @@
                 ...gameState,
                 lastSave: Date.now()
             };
-            // En un entorno real, esto se guardaría en localStorage
-            // pero aquí lo mantenemos en memoria durante la sesión
-            window.gameData = saveData;
+            localStorage.setItem('colonyGameSave', JSON.stringify(saveData));
         }
 
         function loadGameData() {
-            if (window.gameData) {
-                const savedData = window.gameData;
+            const savedGame = localStorage.getItem('colonyGameSave');
+            if (savedGame) {
+                const savedData = JSON.parse(savedGame);
                 Object.assign(gameState, savedData);
                 
                 // Calcular progreso offline si había una sesión guardada
